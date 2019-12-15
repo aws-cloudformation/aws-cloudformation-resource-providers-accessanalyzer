@@ -1,0 +1,15 @@
+{
+    "typeName": "AWS::AccessAnalyzer::Analyzer",
+    "language": "java",
+    "runtime": "java8",
+    "entrypoint": "com.amazonaws.accessanalyzer.analyzer.HandlerWrapper::handleRequest",
+    "testEntrypoint": "com.amazonaws.accessanalyzer.analyzer.HandlerWrapper:testEntrypoint",
+    "settings": {
+        "namespace": [
+            "com",
+            "amazonaws",
+            "accessanalyzer",
+            "analyzer"
+        ]
+    }
+}

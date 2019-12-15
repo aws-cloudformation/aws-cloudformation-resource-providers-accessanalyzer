@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+._*
+
+# Maven outputs
+.classpath
+
+# auto-generated files
+target/
+*.zip
+
+# logs
+rpdk.log
+
+.hypothesis

@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  Analyzer:
+    Type: 'AWS::AccessAnalyzer::Analyzer'
+    Properties:
+      Type: ACCOUNT
+      Tags:
+        -
+          Key: CCCCC
+          Value: DDDDD
+        -
+          Key: EEEEE
+          Value: FFFFF
+      ArchiveRules:
+        -
+          RuleName: IgnoreBar
+          Filter:
+            -
+              Property: 'principal.CanonicalUser'
+              Contains:
+                - AAAA
+            -
+              Property: 'resourceType'
+              Eq:
+                - BBBB
+            -
+              Property: 'resource'
+              Neq:
+                - CCCC
+                - DDDD
+            -
+              Property: 'condition.aws:SourceAccount'
+              Exists: false

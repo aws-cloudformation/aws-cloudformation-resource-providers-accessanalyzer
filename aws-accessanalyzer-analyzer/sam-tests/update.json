@@ -1,0 +1,123 @@
+{
+  "credentials": {},
+  "action": "UPDATE",
+  "request": {
+    "clientRequestToken": "a57fcabb-c226-4e5c-9e0b-5514905809d6",
+    "previousResourceState": {
+      "Type": "ACCOUNT",
+      "Arn": "arn:aws:access-analyzer:us-east-1:196433972733:analyzer/MyAnalyzer-RAVyFACj5k8J",
+      "Tags": [
+        {
+          "Key": "AAAAA",
+          "Value": "BBBBB"
+        }
+      ],
+      "ArchiveRules": [
+        {
+          "RuleName": "IgnoreFoo",
+          "Filter": [
+            {
+              "Property": "principal.AWS",
+              "Contains": [
+                "1111"
+              ]
+            },
+            {
+              "Property": "resourceType",
+              "Eq": [
+                "2222",
+                "3333"
+              ]
+            },
+            {
+              "Property": "resource",
+              "Eq": [
+                "4444",
+                "5555"
+              ]
+            },
+            {
+              "Property": "condition.aws:PrincipalArn",
+              "Exists": true
+            }
+          ]
+        }
+      ]
+    },
+    "desiredResourceState": {
+      "Type": "ACCOUNT",
+      "Tags": [
+        {
+          "Key": "CCCCC",
+          "Value": "DDDDD"
+        },
+        {
+          "Key": "EEEEE",
+          "Value": "FFFFF"
+        }
+      ],
+      "ArchiveRules": [
+        {
+          "RuleName": "IgnoreFoo",
+          "Filter": [
+            {
+              "Property": "principal.AWS",
+              "Contains": [
+                "1111"
+              ]
+            },
+            {
+              "Property": "resourceType",
+              "Eq": [
+                "2222",
+                "3333"
+              ]
+            },
+            {
+              "Property": "resource",
+              "Eq": [
+                "4444",
+                "6666"
+              ]
+            },
+            {
+              "Property": "condition.aws:PrincipalArn",
+              "Exists": true
+            }
+          ]
+        },
+        {
+          "RuleName": "IgnoreBar",
+          "Filter": [
+            {
+              "Property": "principal.CanonicalUser",
+              "Contains": [
+                "1111"
+              ]
+            },
+            {
+              "Property": "resourceType",
+              "Eq": [
+                "2222",
+                "3333"
+              ]
+            },
+            {
+              "Property": "resource",
+              "Eq": [
+                "4444",
+                "5555"
+              ]
+            },
+            {
+              "Property": "condition.aws:PrincipalArn",
+              "Exists": true
+            }
+          ]
+        }
+      ]
+    },
+    "logicalResourceIdentifier": "MyAnalyzer"
+  },
+  "callbackContext": null
+}

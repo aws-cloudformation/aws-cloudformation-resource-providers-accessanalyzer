@@ -1,0 +1,28 @@
+#!/bin/bash
+set -e -u -o pipefail
+
+BASE=$(dirname $(readlink -f $0))/..
+cd $BASE
+
+function run-sam {
+  name=$1; shift
+  result=$1; shift
+  echo
+  echo "---------------"
+  echo "Running ${name}"
+  echo "---------------"
+  sam local invoke TestEntrypoint --event "sam-tests/${name}.json" 2>/dev/null | jq -Mr .status | (grep -q ${result} && echo "OK") || (echo FAILED && false)
+}
+
+echo "Updating creds"
+${BASE}/sam-tests/update-creds
+
+run-sam create SUCCESS
+run-sam read SUCCESS
+run-sam list SUCCESS
+run-sam update SUCCESS
+run-sam delete SUCCESS
+
+run-sam delete-not-found SUCCESS # deletes of non-existent analyzers are OK
+run-sam read-non-existent-analyzer FAILED
+run-sam update-non-existent-analyzer FAILED

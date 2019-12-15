@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  Analyzer:
+    Type: 'AWS::AccessAnalyzer::Analyzer'
+    Properties:
+      Type: ACCOUNT
+      Tags:
+        -
+          Key: AAAAAA
+          Value: BBBBB
+      ArchiveRules:
+        -
+          RuleName: IgnoreFoo
+          Filter:
+            -
+              Property: 'principal.AWS'
+              Contains:
+                - AAAA
+            -
+              Property: 'resourceType'
+              Eq:
+                - BBBB
+                - CCCC
+            -
+              Property: 'resource'
+              Neq:
+                - CCCC
+                - DDDD
+            -
+              Property: 'condition.aws:PrincipalArn'
+              Exists: true

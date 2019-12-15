@@ -1,0 +1,3 @@
+# Notes
+
+- NB: analyzers are created in us-east-1.  That's the default of the client.

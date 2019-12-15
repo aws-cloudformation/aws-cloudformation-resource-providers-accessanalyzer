@@ -1,0 +1,9 @@
+{
+  "credentials": {},
+  "action": "LIST",
+  "request": {
+    "clientRequestToken": "a57fcabb-c226-4e5c-9e0b-5514905809d6",
+    "logicalResourceIdentifier": "MyAnalyzer"
+  },
+  "callbackContext": null
+}
