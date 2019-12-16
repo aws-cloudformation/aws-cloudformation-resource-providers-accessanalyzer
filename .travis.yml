@@ -5,7 +5,7 @@ env:
   global:
     - PYENV_VERSION=3.7.1
 install:
-  - pip3 install --user pre-commit
+  - pip3 install --user pre-commit cloudformation-cli-java-plugin
 script:
   - pre-commit run --all-files --verbose
   - cd aws-accessanalyzer-analyzer
