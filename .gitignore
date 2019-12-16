@@ -25,13 +25,27 @@ hs_err_pid*
 # IDE configurations
 *.iml
 .vscode/
-.idea/
 
 # Build
 target/
+build
 
 # Generated Files
 .classpath
 .factorypath
 .project
 .settings/
+.gradle/
+
+# MacOS
+.DS_Store
+
+# IntelliJ
+*.iml
+.idea
+out.java
+out/
+.settings
+.project
+
+aws-accessanalyzer-analyzer/resource-role.yaml
