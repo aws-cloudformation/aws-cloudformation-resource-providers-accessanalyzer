@@ -4,6 +4,8 @@ jdk: openjdk11
 env:
   global:
     - PYENV_VERSION=3.7.1
+    - AWS_REGION="us-east-1"
+    - AWS_DEFAULT_REGION=$AWS_REGION
 install:
   - pip3 install --user pre-commit cloudformation-cli-java-plugin
 script:

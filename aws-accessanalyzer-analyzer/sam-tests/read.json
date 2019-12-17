@@ -1,0 +1,12 @@
+{
+  "credentials": {},
+  "action": "READ",
+  "request": {
+    "clientRequestToken": "a57fcabb-c226-4e5c-9e0b-5514905809d6",
+    "desiredResourceState": {
+      "Arn": "arn:aws:access-analyzer:us-east-1:196433972733:analyzer/MyAnalyzer-RAVyFACj5k8J"
+    },
+    "logicalResourceIdentifier": "MyAnalyzer"
+  },
+  "callbackContext": null
+}

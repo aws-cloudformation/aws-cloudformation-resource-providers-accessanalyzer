@@ -15,6 +15,9 @@ out/
 
 # auto-generated files
 target/
+*.zip
 
 # our logs
 rpdk.log
+
+.hypothesis

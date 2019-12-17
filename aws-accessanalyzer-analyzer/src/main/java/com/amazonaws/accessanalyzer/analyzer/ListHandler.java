@@ -1,30 +1,56 @@
 package com.amazonaws.accessanalyzer.analyzer;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import lombok.val;
+import software.amazon.awssdk.services.accessanalyzer.AccessAnalyzerClient;
+import software.amazon.awssdk.services.accessanalyzer.model.ListAnalyzersRequest;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
+import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
-import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.OperationStatus;
+import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class ListHandler extends BaseHandler<CallbackContext> {
 
-    @Override
-    public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
-        final AmazonWebServicesClientProxy proxy,
-        final ResourceHandlerRequest<ResourceModel> request,
-        final CallbackContext callbackContext,
-        final Logger logger) {
+  private static final int MAX_RESULTS = 100;
 
-        final List<ResourceModel> models = new ArrayList<>();
-
-        // TODO : put your code here
-
-        return ProgressEvent.<ResourceModel, CallbackContext>builder()
-            .resourceModels(models)
-            .status(OperationStatus.SUCCESS)
-            .build();
+  @Override
+  public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
+      AmazonWebServicesClientProxy proxy, ResourceHandlerRequest<ResourceModel> request,
+      CallbackContext callbackContext, Logger logger) {
+    try (val client = ClientBuilder.getClient()) {
+      return handleRequestWithClient(client, proxy, request, callbackContext, logger);
     }
+  }
+
+  @SuppressWarnings("WeakerAccess")
+  @VisibleForTesting
+  static ProgressEvent<ResourceModel, CallbackContext> handleRequestWithClient(
+      AccessAnalyzerClient client,
+      AmazonWebServicesClientProxy proxy, ResourceHandlerRequest<ResourceModel> request,
+      @SuppressWarnings("unused") CallbackContext callbackContext, Logger logger) {
+    val listRequest = ListAnalyzersRequest.builder()
+        .maxResults(MAX_RESULTS)
+        .nextToken(request.getNextToken())
+        .build();
+    try {
+      val result = proxy
+          .injectCredentialsAndInvokeIterableV2(listRequest, client::listAnalyzersPaginator);
+      val analyzers = result.stream().flatMap(v -> v.analyzers().stream())
+          .collect(Collectors.toList());
+      val models = Util.map(analyzers, Util::analyzerSummaryToModel);
+      return ProgressEvent.<ResourceModel, CallbackContext>builder()
+          .resourceModels(models)
+          .status(OperationStatus.SUCCESS)
+          .build();
+    } catch (Exception ex) {
+      logger.log(String.format("%s List failed", ResourceModel.TYPE_NAME));
+      return ProgressEvent.defaultFailureHandler(ex, HandlerErrorCode.ServiceInternalError);
+    }
+    // TODO: Handle more exceptions
+  }
 }

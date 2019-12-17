@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e -u -o pipefail
+credentials=$(get creds somehow)
+BASE=$(dirname $(readlink -f $0))
+cd $BASE
+
+function update_file {
+  local f=$1; shift
+  cat $f | jq ".credentials = ${credentials}" > $f.new
+  mv $f.new $f
+}
+
+FILES=$(ls *.json)
+
+for file in $FILES; do
+  echo "Updating ${file}"
+  update_file $file
+done
