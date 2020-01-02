@@ -1,4 +1,4 @@
-## AWS CloudFormation Resource Providers Access Analyzer
+## aws-cloudformation-resource-providers-accessanalyzer
 
 The CloudFormation Resource Provider Package For AWS AccessAnalyzer
 
