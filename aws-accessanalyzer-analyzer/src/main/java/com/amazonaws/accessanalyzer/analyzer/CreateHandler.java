@@ -62,7 +62,6 @@ public class CreateHandler extends BaseHandler<CallbackContext> {
       }
       model.setArn(result.arn());
       logger.log(String.format("%s [%s] Created Successfully", ResourceModel.TYPE_NAME, name));
-      logger.log("Model: " + model.toString());
       return ProgressEvent.defaultSuccessHandler(model);
     } catch (ServiceQuotaExceededException ex) {
       logger.log(
