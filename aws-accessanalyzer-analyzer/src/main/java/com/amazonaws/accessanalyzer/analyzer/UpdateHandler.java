@@ -50,7 +50,9 @@ public class UpdateHandler extends BaseHandler<CallbackContext> {
     }
     newModel.setArn(arn);
 
-    // CFN is inconsistent about returning the AnalyzerName used in the CREATE call
+    // CFN only returns AnalyzerName used in the CREATE call
+    // if it was part of the user template.
+    // https://sage.amazon.com/questions/783984
     val name = Optional.ofNullable(oldModel.getAnalyzerName())
         .orElse(Util.arnToAnalyzerName(arn));
 
