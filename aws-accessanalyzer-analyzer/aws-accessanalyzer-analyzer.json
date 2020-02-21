@@ -2,6 +2,12 @@
   "typeName": "AWS::AccessAnalyzer::Analyzer",
   "description": "The AWS::AccessAnalyzer::Analyzer type specifies an analyzer of the user's account",
   "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-accessanalyzer.git",
+  "resourceLink": {
+    "templateUri": "/access-analyzer/home?region=${awsRegion}#/analyzer/${AnalyzerName}",
+    "mappings": {
+      "AnalyzerName": "/AnalyzerName"
+    }
+  },
   "definitions": {
     "ArchiveRule": {
       "description": "An Access Analyzer archive rule",
