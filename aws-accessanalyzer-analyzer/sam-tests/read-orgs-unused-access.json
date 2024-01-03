@@ -1,0 +1,10 @@
+{
+  "credentials": {},
+  "action": "READ",
+  "request": {
+    "desiredResourceState": {
+      "Arn": "arn:aws:access-analyzer:us-west-2:903798373645:analyzer/OrgsUnusedAccessAnalyzer-RAVyFACj5k8J"
+    }
+  },
+  "callbackContext": null
+}

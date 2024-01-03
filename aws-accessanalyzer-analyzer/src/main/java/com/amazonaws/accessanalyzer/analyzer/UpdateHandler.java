@@ -6,10 +6,14 @@ import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.Set;
+import java.util.List;
 import lombok.val;
 import software.amazon.awssdk.services.accessanalyzer.AccessAnalyzerClient;
+import software.amazon.awssdk.services.accessanalyzer.model.AccessDeniedException;
 import software.amazon.awssdk.services.accessanalyzer.model.CreateArchiveRuleRequest;
 import software.amazon.awssdk.services.accessanalyzer.model.DeleteArchiveRuleRequest;
+import software.amazon.awssdk.services.accessanalyzer.model.InlineArchiveRule;
 import software.amazon.awssdk.services.accessanalyzer.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.accessanalyzer.model.ServiceQuotaExceededException;
 import software.amazon.awssdk.services.accessanalyzer.model.TagResourceRequest;
@@ -44,8 +48,9 @@ public class UpdateHandler extends BaseHandler<CallbackContext> {
     val arn = oldModel.getArn();
     if (arn == null) {
       logger.log("Impossible: Null arn in current state of analyzer");
+      // The resource does not exist, so per contract tests we must return Failed + NotFound
       return ProgressEvent
-          .failed(request.getDesiredResourceState(), null, HandlerErrorCode.InternalFailure,
+          .failed(request.getDesiredResourceState(), null, HandlerErrorCode.NotFound,
               "Internal error");
     }
     newModel.setArn(arn);
@@ -156,6 +161,10 @@ public class UpdateHandler extends BaseHandler<CallbackContext> {
       logger.log(
           String.format("%s [%s] too many tags or archive rules", ResourceModel.TYPE_NAME, name));
       return ProgressEvent.defaultFailureHandler(ex, HandlerErrorCode.ServiceLimitExceeded);
+    } catch (AccessDeniedException ex) {
+      logger.log(String.format("%s [%s] Update Failed due to access denied error",
+          ResourceModel.TYPE_NAME, name));
+      return ProgressEvent.defaultFailureHandler(ex, HandlerErrorCode.AccessDenied);
     } catch (AmazonServiceException ex) {
       if (ex.getStatusCode() == Util.SERVICE_VALIDATION_STATUS_CODE) {
         logger.log(String.format("%s [%s] Update Failed due to a service validation error",
@@ -165,6 +174,13 @@ public class UpdateHandler extends BaseHandler<CallbackContext> {
       logger.log(String.format("%s [%s] Updated Failed", ResourceModel.TYPE_NAME, name));
       return ProgressEvent.defaultFailureHandler(ex, HandlerErrorCode.ServiceInternalError);
     } catch (Exception ex) {
+      if (ex.getMessage().contains("404")) {
+        logger.log(
+            String.format("%s [%s] not found and must be created", ResourceModel.TYPE_NAME, name));
+        return ProgressEvent
+            .failed(request.getDesiredResourceState(), null, HandlerErrorCode.NotFound, String
+                .format("%s [%s] not found and must be created", ResourceModel.TYPE_NAME, name));
+      }
       logger.log(String.format("%s [%s] Updated Failed", ResourceModel.TYPE_NAME, name));
       return ProgressEvent.defaultFailureHandler(ex, HandlerErrorCode.ServiceInternalError);
     }

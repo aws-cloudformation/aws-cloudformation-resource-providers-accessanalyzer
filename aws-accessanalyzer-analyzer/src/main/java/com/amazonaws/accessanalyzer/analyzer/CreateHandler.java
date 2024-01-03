@@ -1,18 +1,28 @@
 package com.amazonaws.accessanalyzer.analyzer;
 
+import java.util.List;
+import java.util.Optional;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.util.StringUtils;
+import com.amazonaws.accessanalyzer.analyzer.AnalyzerConfiguration;
+import com.amazonaws.accessanalyzer.analyzer.UnusedAccessConfiguration;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.val;
 import software.amazon.awssdk.services.accessanalyzer.AccessAnalyzerClient;
+import software.amazon.awssdk.services.accessanalyzer.model.AccessDeniedException;
 import software.amazon.awssdk.services.accessanalyzer.model.CreateAnalyzerRequest;
+import software.amazon.awssdk.services.accessanalyzer.model.CreateAnalyzerResponse;
 import software.amazon.awssdk.services.accessanalyzer.model.ServiceQuotaExceededException;
+import software.amazon.awssdk.services.accessanalyzer.model.InlineArchiveRule;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.cloudformation.resource.IdentifierUtils;
+
+import static com.amazonaws.accessanalyzer.analyzer.Util.ACCOUNT_UNUSED_ACCESS;
+import static com.amazonaws.accessanalyzer.analyzer.Util.ORGANIZATION_UNUSED_ACCESS;
 
 
 public class CreateHandler extends BaseHandler<CallbackContext> {
@@ -45,14 +55,29 @@ public class CreateHandler extends BaseHandler<CallbackContext> {
       logger.log("No name in request.  Invented name: " + name);
     }
     val rules = Util.map(Util.resourceRules(model), Util::inlineArchiveRuleFromArchiveRule);
-    val createRequest = CreateAnalyzerRequest.builder()
+
+    Optional<Integer> unusedAccessAge = Util.getUnusedAccessAgeFromResourceModel(model);
+
+    CreateAnalyzerRequest.Builder createRequestBuilder = CreateAnalyzerRequest.builder()
         .analyzerName(name)
         .archiveRules(rules)
         .tags(Util.tagsToMap(Util.resourceTags(model)))
-        .type(model.getType())
-        .build();
+        .type(model.getType());
+
+    if ( model.getType().equals(ACCOUNT_UNUSED_ACCESS) || model.getType().equals(ORGANIZATION_UNUSED_ACCESS)) {
+      if (unusedAccessAge.isPresent()) {
+        createRequestBuilder.configuration(Util.createAnalyzerConfiguration(unusedAccessAge.get()));
+      } else {
+        model.setAnalyzerConfiguration(AnalyzerConfiguration.builder()
+            .unusedAccessConfiguration(UnusedAccessConfiguration.builder()
+                .unusedAccessAge(90)
+                .build())
+            .build());
+      }
+    }
+
     try {
-      val result = proxy.injectCredentialsAndInvokeV2(createRequest, client::createAnalyzer);
+      val result = proxy.injectCredentialsAndInvokeV2(createRequestBuilder.build(), client::createAnalyzer);
       val arn = result.arn();
       if (arn == null) {
         logger.log(String.format("ERROR: Impossible.  Null ARN from create: %s", name));
@@ -67,6 +92,10 @@ public class CreateHandler extends BaseHandler<CallbackContext> {
       logger.log(
           String.format("%s [%s] Too many analyzers", ResourceModel.TYPE_NAME, name));
       return ProgressEvent.defaultFailureHandler(ex, HandlerErrorCode.ServiceLimitExceeded);
+    } catch (AccessDeniedException ex) {
+      logger.log(String.format("%s [%s] Create Failed due to access denied error",
+          ResourceModel.TYPE_NAME, name));
+      return ProgressEvent.defaultFailureHandler(ex, HandlerErrorCode.AccessDenied);
     } catch (AmazonServiceException ex) {
       if (ex.getStatusCode() == Util.SERVICE_VALIDATION_STATUS_CODE) {
         logger.log(String.format("%s [%s] Create Failed due to a service validation error",

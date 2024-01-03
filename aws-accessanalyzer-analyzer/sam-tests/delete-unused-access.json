@@ -1,0 +1,12 @@
+{
+  "credentials": {},
+  "action": "DELETE",
+  "request": {
+    "clientRequestToken": "a57fcabb-c226-4e5c-9e0b-5514905809d6",
+    "desiredResourceState": {
+      "Arn": "arn:aws:access-analyzer:us-west-2:903798373645:analyzer/UnusedAccessAnalyzer-RAVyFACj5k8J"
+    },
+    "logicalResourceIdentifier": "UnusedAccessAnalyzer-RAVyFACj5k8J"
+  },
+  "callbackContext": null
+}

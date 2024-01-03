@@ -4,9 +4,16 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.List;
 import lombok.val;
 import software.amazon.awssdk.services.accessanalyzer.AccessAnalyzerClient;
+import software.amazon.awssdk.services.accessanalyzer.model.AccessDeniedException;
+import software.amazon.awssdk.services.accessanalyzer.model.AnalyzerSummary;
 import software.amazon.awssdk.services.accessanalyzer.model.ListAnalyzersRequest;
+import software.amazon.awssdk.services.accessanalyzer.model.ListAnalyzersResponse;
+import software.amazon.awssdk.services.accessanalyzer.AccessAnalyzerClient;
+import software.amazon.awssdk.services.accessanalyzer.model.Type;
+import software.amazon.awssdk.services.accessanalyzer.paginators.ListAnalyzersIterable;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
@@ -47,6 +54,9 @@ public class ListHandler extends BaseHandler<CallbackContext> {
           .resourceModels(models)
           .status(OperationStatus.SUCCESS)
           .build();
+    } catch (AccessDeniedException ex) {
+      logger.log(String.format("%s List denied", ResourceModel.TYPE_NAME));
+      return ProgressEvent.defaultFailureHandler(ex, HandlerErrorCode.AccessDenied);
     } catch (Exception ex) {
       logger.log(String.format("%s List failed", ResourceModel.TYPE_NAME));
       return ProgressEvent.defaultFailureHandler(ex, HandlerErrorCode.ServiceInternalError);

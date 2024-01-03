@@ -12,9 +12,16 @@ import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import software.amazon.awssdk.core.exception.SdkServiceException;
+import software.amazon.awssdk.services.accessanalyzer.model.AccessDeniedException;
+import software.amazon.awssdk.services.accessanalyzer.model.AccessAnalyzerException;
+import software.amazon.awssdk.services.accessanalyzer.model.ConflictException;
 import software.amazon.awssdk.services.accessanalyzer.model.DeleteAnalyzerRequest;
 import software.amazon.awssdk.services.accessanalyzer.model.DeleteAnalyzerResponse;
 import software.amazon.awssdk.services.accessanalyzer.model.ServiceQuotaExceededException;
+import software.amazon.awssdk.services.accessanalyzer.model.ThrottlingException;
+import software.amazon.awssdk.services.accessanalyzer.model.InternalServerException;
+import software.amazon.awssdk.services.accessanalyzer.model.ResourceNotFoundException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
@@ -48,7 +55,7 @@ class DeleteHandlerTest {
     assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
     assertThat(response.getCallbackContext()).isNull();
     assertThat(response.getResourceModels()).isNull();
-    assertThat(Util.resourceModelIsEmpty(response.getResourceModel()));
+    assertThat(response.getResourceModel()).isNull();
     assertThat(response.getMessage()).isNull();
     assertThat(response.getErrorCode()).isNull();
   }
@@ -62,7 +69,7 @@ class DeleteHandlerTest {
     assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
     assertThat(response.getCallbackContext()).isNull();
     assertThat(response.getResourceModels()).isNull();
-    assertThat(response.getResourceModel()).isEqualTo(model);
+    assertThat(response.getResourceModel()).isNull();
     assertThat(response.getMessage()).startsWith("Internal error");
     assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.InternalFailure);
   }
@@ -76,7 +83,7 @@ class DeleteHandlerTest {
     assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
     assertThat(response.getCallbackContext()).isNull();
     assertThat(response.getResourceModels()).isNull();
-    assertThat(response.getResourceModel()).isEqualTo(model);
+    assertThat(response.getResourceModel()).isNull();
     assertThat(response.getMessage()).startsWith("Internal error");
     assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.InternalFailure);
   }
@@ -90,7 +97,7 @@ class DeleteHandlerTest {
     assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
     assertThat(response.getCallbackContext()).isNull();
     assertThat(response.getResourceModels()).isNull();
-    assertThat(Util.resourceModelIsEmpty(response.getResourceModel()));
+    assertThat(response.getResourceModel()).isNull();
     assertThat(response.getMessage()).isNull();
     assertThat(response.getErrorCode()).isNull();
   }
@@ -110,8 +117,104 @@ class DeleteHandlerTest {
   }
 
   @Test
+  void testAccessDeniedException() {
+    doThrow(AccessDeniedException.builder().message("Access denied").build())
+        .when(proxy)
+        .injectCredentialsAndInvokeV2(any(), any());
+    val request = prepareHandlerRequest();
+    val response = invokeHandleRequest(request);
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+    assertThat(response.getResourceModel()).isNull();
+    assertThat(response.getMessage()).startsWith("Access denied");
+    assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.AccessDenied);
+  }
+
+  @Test
+  void testConflictException() {
+    doThrow(ConflictException.builder().build())
+        .when(proxy)
+        .injectCredentialsAndInvokeV2(any(), any());
+    val request = prepareHandlerRequest();
+    val response = invokeHandleRequest(request);
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+    assertThat(response.getResourceModel()).isNull();
+    assertThat(response.getMessage()).startsWith("Invalid request");
+    assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.InvalidRequest);
+  }
+
+  @Test
+  void testResourceNotFoundException() {
+    doThrow(ResourceNotFoundException.builder().build())
+        .when(proxy)
+        .injectCredentialsAndInvokeV2(any(), any());
+    val request = prepareHandlerRequest();
+    val response = invokeHandleRequest(request);
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+    assertThat(response.getResourceModel()).isNull();
+    assertThat(response.getMessage()).startsWith("No analyzer named");
+    assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotFound);
+  }
+
+  @Test
+  void testInternalErrorException() {
+    doThrow(InternalServerException.builder().build())
+        .when(proxy)
+        .injectCredentialsAndInvokeV2(any(), any());
+    val request = prepareHandlerRequest();
+    val response = invokeHandleRequest(request);
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+    assertThat(response.getResourceModel()).isNull();
+    assertThat(response.getMessage()).startsWith("Internal error");
+    assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
+  }
+
+  @Test
+  void testUnknowException() {
+    doThrow(SdkServiceException.builder().build())
+        .when(proxy)
+        .injectCredentialsAndInvokeV2(any(), any());
+    val request = prepareHandlerRequest();
+    val response = invokeHandleRequest(request);
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+    assertThat(response.getResourceModel()).isNull();
+    assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
+  }
+
+  @Test
   void testAmazonServiceException() {
     doThrow(new AmazonServiceException("internal failure"))
+        .when(proxy)
+        .injectCredentialsAndInvokeV2(any(), any());
+    val request = prepareHandlerRequest();
+    val response = invokeHandleRequest(request);
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+    assertThat(response.getResourceModel()).isNull();
+    assertThat(response.getMessage()).startsWith("internal failure");
+    assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
+  }
+
+  @Test
+  void testThrottlingExceptionException() {
+    doThrow(ThrottlingException.builder().build())
+        .when(proxy)
+        .injectCredentialsAndInvokeV2(any(), any());
+    val request = prepareHandlerRequest();
+    val response = invokeHandleRequest(request);
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+    assertThat(response.getResourceModel()).isNull();
+    assertThat(response.getMessage()).startsWith("Throttled");
+    assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.Throttling);
+  }
+
+  @Test
+  void testAccessAnalyzerException() {
+    doThrow(AccessAnalyzerException.builder().message("internal failure").build())
         .when(proxy)
         .injectCredentialsAndInvokeV2(any(), any());
     val request = prepareHandlerRequest();

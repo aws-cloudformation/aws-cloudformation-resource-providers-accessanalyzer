@@ -1,0 +1,49 @@
+{
+  "credentials": {},
+  "action": "CREATE",
+  "request": {
+    "clientRequestToken": "a57fcabb-c226-4e5c-9e0b-5514905809d6",
+    "desiredResourceState": {
+      "Type": "ORGANIZATION",
+      "Tags": [
+        {
+          "Key": "AAAAA",
+          "Value": "BBBBB"
+        }
+      ],
+      "ArchiveRules": [
+        {
+          "RuleName": "IgnoreFoo",
+          "Filter": [
+            {
+              "Property": "principal.AWS",
+              "Contains": [
+                "1111"
+              ]
+            },
+            {
+              "Property": "resourceType",
+              "Eq": [
+                "2222",
+                "3333"
+              ]
+            },
+            {
+              "Property": "resource",
+              "Eq": [
+                "4444",
+                "5555"
+              ]
+            },
+            {
+              "Property": "condition.aws:PrincipalArn",
+              "Exists": true
+            }
+          ]
+        }
+      ]
+    },
+    "logicalResourceIdentifier": "MyOrgAnalyzer"
+  },
+  "callbackContext": null
+}

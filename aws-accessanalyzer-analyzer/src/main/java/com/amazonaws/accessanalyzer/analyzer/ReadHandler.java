@@ -5,16 +5,22 @@ import java.util.ArrayList;
 import java.util.Optional;
 import lombok.val;
 import software.amazon.awssdk.services.accessanalyzer.AccessAnalyzerClient;
+import software.amazon.awssdk.services.accessanalyzer.model.AccessDeniedException;
 import software.amazon.awssdk.services.accessanalyzer.model.GetAnalyzerRequest;
 import software.amazon.awssdk.services.accessanalyzer.model.GetAnalyzerResponse;
 import software.amazon.awssdk.services.accessanalyzer.model.ListArchiveRulesRequest;
 import software.amazon.awssdk.services.accessanalyzer.model.ListArchiveRulesResponse;
 import software.amazon.awssdk.services.accessanalyzer.model.ResourceNotFoundException;
+import com.amazonaws.accessanalyzer.analyzer.AnalyzerConfiguration;
+import com.amazonaws.accessanalyzer.analyzer.UnusedAccessConfiguration;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+
+import static com.amazonaws.accessanalyzer.analyzer.Util.ACCOUNT_UNUSED_ACCESS;
+import static com.amazonaws.accessanalyzer.analyzer.Util.ORGANIZATION_UNUSED_ACCESS;
 
 public class ReadHandler extends BaseHandler<CallbackContext> {
 
@@ -67,20 +73,37 @@ public class ReadHandler extends BaseHandler<CallbackContext> {
       val msg = NO_ANALYZER_MESSAGE_PREFIX + name;
       logger.log(msg);
       return ProgressEvent.failed(model, null, HandlerErrorCode.NotFound, msg);
+    } catch (AccessDeniedException ex) {
+      logger.log(String.format("%s [%s] Get analyzer denied", ResourceModel.TYPE_NAME, name));
+      return ProgressEvent.defaultFailureHandler(ex, HandlerErrorCode.AccessDenied);
     } catch (Exception ex) {
       logger.log(String.format("%s [%s] Get analyzer failed", ResourceModel.TYPE_NAME, name));
       return ProgressEvent.defaultFailureHandler(ex, HandlerErrorCode.ServiceInternalError);
     }
     // TODO: Handle more errors
     val summary = getAnalyzerResponse.analyzer(); // TODO: Compare summary with model
-    val resultModel = ResourceModel
+    val resultModelBuilder = ResourceModel
         .builder()
         .analyzerName(name)
         .type(summary.typeAsString())
         .arn(summary.arn())
         .tags(Util.mapToTags(summary.tags()))
-        .archiveRules(archiveRules)
-        .build();
-    return ProgressEvent.defaultSuccessHandler(resultModel);
+        .archiveRules(archiveRules);
+
+    if (summary.typeAsString() != null && (summary.typeAsString().equals(ACCOUNT_UNUSED_ACCESS) ||
+         summary.typeAsString().equals(ORGANIZATION_UNUSED_ACCESS))) {
+      resultModelBuilder.analyzerConfiguration(AnalyzerConfiguration.builder()
+              .unusedAccessConfiguration(UnusedAccessConfiguration.builder()
+                  .unusedAccessAge(summary
+                      .configuration()
+                      .unusedAccess()
+                      .unusedAccessAge()
+                  )
+                  .build())
+              .build())
+          .build();
+    }
+
+    return ProgressEvent.defaultSuccessHandler(resultModelBuilder.build());
   }
 }

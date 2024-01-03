@@ -18,10 +18,16 @@ echo "Updating creds"
 ${BASE}/sam-tests/update-creds
 
 run-sam create SUCCESS
+# Ensure you have created an organization in the account your testing with.
+# Ensure you have enabled AWS service access with access analyzer and orgs.
+run-sam create-orgs SUCCESS
 run-sam read SUCCESS
+run-sam read-orgs SUCCESS
 run-sam list SUCCESS
 run-sam update SUCCESS
+run-sam update-orgs SUCCESS
 run-sam delete SUCCESS
+run-sam delete-orgs SUCCESS
 
 run-sam delete-not-found SUCCESS # deletes of non-existent analyzers are OK
 run-sam read-non-existent-analyzer FAILED

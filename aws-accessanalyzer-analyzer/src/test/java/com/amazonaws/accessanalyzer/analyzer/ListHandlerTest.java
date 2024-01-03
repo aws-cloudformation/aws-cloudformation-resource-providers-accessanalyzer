@@ -15,6 +15,7 @@ import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.accessanalyzer.AccessAnalyzerClient;
+import software.amazon.awssdk.services.accessanalyzer.model.AccessDeniedException;
 import software.amazon.awssdk.services.accessanalyzer.model.AnalyzerSummary;
 import software.amazon.awssdk.services.accessanalyzer.model.ListAnalyzersRequest;
 import software.amazon.awssdk.services.accessanalyzer.model.ListAnalyzersResponse;
@@ -186,6 +187,18 @@ class ListHandlerTest {
         response.getResourceModels().stream()
             .map(ResourceModel::getAnalyzerName)
             .collect(Collectors.toList()));
+  }
+
+  @Test
+  void testAccessDeniedServiceException() {
+    val client = new ThrowingClient(
+        AccessDeniedException.builder().message("access denied").build());
+    val response = invokeListHandler(client);
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+    assertThat(response.getResourceModel()).isNull();
+    assertThat(response.getMessage()).startsWith("access denied");
+    assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.AccessDenied);
   }
 
   @Test

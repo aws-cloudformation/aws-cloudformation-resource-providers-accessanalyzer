@@ -6,6 +6,7 @@ class TestUtil {
   }
 
   static final String ACCOUNT = "ACCOUNT";
+  static final String ACCOUNT_UNUSED_ACCESS = "ACCOUNT_UNUSED_ACCESS";
   static final String CLIENT_REQUEST_TOKEN = "ABC";
   static final String LOGICAL_RESOURCE_ID = "MyAnalyzer";
   static final String ANALYZER_NAME = "MyAnalyzer-ABC";

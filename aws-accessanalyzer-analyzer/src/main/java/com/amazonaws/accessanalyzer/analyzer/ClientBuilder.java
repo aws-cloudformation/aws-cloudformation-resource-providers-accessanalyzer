@@ -1,6 +1,7 @@
 package com.amazonaws.accessanalyzer.analyzer;
 
 import java.time.Duration;
+
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.services.accessanalyzer.AccessAnalyzerClient;

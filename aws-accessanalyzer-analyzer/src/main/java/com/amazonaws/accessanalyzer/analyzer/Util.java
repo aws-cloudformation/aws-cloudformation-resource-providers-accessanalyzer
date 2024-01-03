@@ -13,16 +13,21 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.val;
 import software.amazon.awssdk.arns.Arn;
+import software.amazon.awssdk.services.accessanalyzer.model.AnalyzerConfiguration;
 import software.amazon.awssdk.services.accessanalyzer.model.AnalyzerSummary;
 import software.amazon.awssdk.services.accessanalyzer.model.ArchiveRuleSummary;
 import software.amazon.awssdk.services.accessanalyzer.model.Criterion;
 import software.amazon.awssdk.services.accessanalyzer.model.InlineArchiveRule;
+import software.amazon.awssdk.services.accessanalyzer.model.UnusedAccessConfiguration;
 import software.amazon.awssdk.utils.StringUtils;
 import software.amazon.cloudformation.exceptions.CfnInternalFailureException;
 
 class Util {
 
   static final int SERVICE_VALIDATION_STATUS_CODE = 400;
+  static final int RESOURCE_NOT_FOUND_STATUS_CODE = 404;
+  public static final String ACCOUNT_UNUSED_ACCESS = "ACCOUNT_UNUSED_ACCESS";
+  public static final String ORGANIZATION_UNUSED_ACCESS = "ORGANIZATION_UNUSED_ACCESS";
 
   static <A, B> List<B> map(Collection<A> xs, Function<A, B> f) {
     return Optional.ofNullable(xs).orElse(Collections.emptyList()).stream().map(f)
@@ -113,14 +118,20 @@ class Util {
                 .filter()
                 .entrySet()
                 .stream()
-                .map(e ->
-                    Filter.builder()
-                        .property(e.getKey())
-                        .contains(e.getValue().contains())
-                        .eq(e.getValue().eq())
-                        .neq(e.getValue().neq())
-                        .exists(e.getValue().exists())
-                        .build())
+                .map(e -> {
+                    val builder = Filter.builder().property(e.getKey());
+                    val criterion = Optional.of(e.getValue());
+                    criterion
+                        .filter(Criterion::hasContains)
+                        .ifPresent(x -> builder.contains(x.contains()));
+                    criterion
+                        .filter(Criterion::hasEq)
+                        .ifPresent(x -> builder.eq(x.eq()));
+                    criterion
+                        .filter(Criterion::hasNeq)
+                        .ifPresent(x -> builder.neq(x.neq()));
+                    return builder.exists(e.getValue().exists()).build();
+                })
                 .collect(Collectors.toList())
         )
         .build();
@@ -135,5 +146,21 @@ class Util {
     return Optional.ofNullable(m).orElse(Collections.emptyMap()).entrySet().stream()
         .map(e -> new Tag(e.getKey(), e.getValue()))
         .collect(Collectors.toSet());
+  }
+
+  static AnalyzerConfiguration createAnalyzerConfiguration(Integer unusedPermissionAge) {
+    return AnalyzerConfiguration.builder()
+        .unusedAccess(UnusedAccessConfiguration.builder()
+            .unusedAccessAge(unusedPermissionAge)
+            .build())
+        .build();
+  }
+
+  static Optional<Integer> getUnusedAccessAgeFromResourceModel(ResourceModel model) {
+    if (model.getAnalyzerConfiguration() == null || model.getAnalyzerConfiguration().getUnusedAccessConfiguration() == null) {
+      return Optional.empty();
+    }
+
+    return Optional.ofNullable(model.getAnalyzerConfiguration().getUnusedAccessConfiguration().getUnusedAccessAge());
   }
 }

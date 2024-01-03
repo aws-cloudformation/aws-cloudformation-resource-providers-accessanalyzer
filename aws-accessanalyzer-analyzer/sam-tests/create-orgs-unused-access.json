@@ -1,0 +1,68 @@
+{
+  "credentials": {},
+  "action": "CREATE",
+  "request": {
+    "clientRequestToken": "a57fcabb-c226-4e5c-9e0b-5514905809d6",
+    "desiredResourceState": {
+      "Type": "ORGANIZATION_UNUSED_ACCESS",
+      "ArchiveRules": [
+        {
+          "RuleName": "IgnoreContains",
+          "Filter": [
+            {
+              "Property": "resource",
+              "Contains": [
+                "arn:aws:iam::123456789012:testRole1",
+                "arn:aws:iam::123456789012:testRole2"
+              ]
+            }
+          ]
+        },
+        {
+          "RuleName": "IgnoreEq",
+          "Filter": [
+            {
+              "Property": "resource",
+              "Eq": [
+                "arn:aws:iam::123456789000:role/testTole"
+              ]
+            }
+          ]
+        },
+        {
+          "RuleName": "IgnoreExists",
+          "Filter": [
+            {
+              "Property": "error",
+              "Exists": true
+            }
+          ]
+        },
+        {
+          "RuleName": "IgnoreNeq",
+          "Filter": [
+            {
+              "Property": "resourceOwnerAccount",
+              "Neq": [
+                "112233445566"
+              ]
+            }
+          ]
+        }
+      ],
+      "Tags": [
+        {
+          "Key": "Kind",
+          "Value": "Dev"
+        }
+      ],
+      "AnalyzerConfiguration": {
+        "UnusedAccessConfiguration": {
+          "UnusedAccessAge": 80
+        }
+      }
+    },
+    "logicalResourceIdentifier": "OrgsUnusedAccessAnalyzer"
+  },
+  "callbackContext": null
+}

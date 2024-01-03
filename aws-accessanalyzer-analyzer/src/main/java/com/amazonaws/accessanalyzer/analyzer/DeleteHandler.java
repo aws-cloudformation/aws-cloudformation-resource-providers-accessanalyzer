@@ -37,11 +37,16 @@ public class DeleteHandler extends BaseHandler<CallbackContext> {
       ResourceHandlerRequest<ResourceModel> request,
       CallbackContext callbackContext, Logger logger) {
     val model = request.getDesiredResourceState();
+    // Delete handler must not a return a resource model
+    // https://code.amazon.com/packages/AWSCloudFormationRPDK/blobs/1e4bf79dcedfaee7072d5431d003a042f312823d/--/src/rpdk/core/contract/suite/resource/handler_delete.py#L39
+    final ResourceModel returnedModel = null;
     val arn = model.getArn();
     if (arn == null) {
       logger.log("Impossible: Null arn in current state of analyzer");
       return ProgressEvent
-          .failed(request.getDesiredResourceState(), null, HandlerErrorCode.InternalFailure,
+          .failed(returnedModel,
+              null,
+              HandlerErrorCode.InternalFailure,
               "Internal error");
     }
     // CFN is inconsistent about returning the AnalyzerName used in the CREATE call
@@ -50,20 +55,22 @@ public class DeleteHandler extends BaseHandler<CallbackContext> {
       val deleteRequest = DeleteAnalyzerRequest.builder().analyzerName(name).build();
       proxy.injectCredentialsAndInvokeV2(deleteRequest, client::deleteAnalyzer);
       logger.log(String.format("%s [%s] Deleted Successfully", ResourceModel.TYPE_NAME, name));
-      return ProgressEvent.defaultSuccessHandler(ResourceModel.builder().build());
+      // Delete handler must not a return a resource model
+      // https://code.amazon.com/packages/AWSCloudFormationRPDK/blobs/1e4bf79dcedfaee7072d5431d003a042f312823d/--/src/rpdk/core/contract/suite/resource/handler_delete.py#L39
+      return ProgressEvent.defaultSuccessHandler(returnedModel);
     } catch (AccessDeniedException ex) {
       logError(logger, name, ex);
-      return ProgressEvent.failed(model, null, HandlerErrorCode.AccessDenied, "Access denied");
+      return ProgressEvent.failed(returnedModel, null, HandlerErrorCode.AccessDenied, "Access denied");
     } catch (ConflictException | ValidationException ex) {
       logError(logger, name, ex);
-      return ProgressEvent.failed(model, null, HandlerErrorCode.InvalidRequest, "Invalid request");
+      return ProgressEvent.failed(returnedModel, null, HandlerErrorCode.InvalidRequest, "Invalid request");
     } catch (InternalServerException ex) {
       logError(logger, name, ex);
       return ProgressEvent
-          .failed(model, null, HandlerErrorCode.ServiceInternalError, "Internal error");
+          .failed(returnedModel, null, HandlerErrorCode.ServiceInternalError, "Internal error");
     } catch (ResourceNotFoundException ex) {
       logError(logger, name, ex);
-      return ProgressEvent.failed(model, null, HandlerErrorCode.NotFound,
+      return ProgressEvent.failed(returnedModel, null, HandlerErrorCode.NotFound,
           String.format("No analyzer named %s", name));
     } catch (ServiceQuotaExceededException ex) {
       logError(logger, name, ex);
@@ -72,7 +79,7 @@ public class DeleteHandler extends BaseHandler<CallbackContext> {
       return ProgressEvent.defaultFailureHandler(ex, HandlerErrorCode.ServiceLimitExceeded);
     } catch (ThrottlingException ex) {
       logError(logger, name, ex);
-      return ProgressEvent.failed(model, null, HandlerErrorCode.Throttling, "Throttled");
+      return ProgressEvent.failed(returnedModel, null, HandlerErrorCode.Throttling, "Throttled");
     } catch (AccessAnalyzerException ex) {
       logError(logger, name, ex, "Impossible: unhandled AccessAnalyzerException subtype");
       return ProgressEvent.defaultFailureHandler(ex, HandlerErrorCode.ServiceInternalError);

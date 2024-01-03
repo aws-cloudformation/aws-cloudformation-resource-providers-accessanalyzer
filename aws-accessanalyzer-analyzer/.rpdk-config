@@ -1,7 +1,8 @@
 {
+    "artifact_type": "RESOURCE",
     "typeName": "AWS::AccessAnalyzer::Analyzer",
     "language": "java",
-    "runtime": "java8",
+    "runtime": "java8.al2",
     "entrypoint": "com.amazonaws.accessanalyzer.analyzer.HandlerWrapper::handleRequest",
     "testEntrypoint": "com.amazonaws.accessanalyzer.analyzer.HandlerWrapper::testEntrypoint",
     "settings": {
@@ -10,6 +11,9 @@
             "amazonaws",
             "accessanalyzer",
             "analyzer"
-        ]
-    }
+        ],
+        "protocolVersion": "2.0.0"
+    },
+    "logProcessorEnabled": "true",
+    "executableEntrypoint": "com.amazonaws.accessanalyzer.analyzer.HandlerWrapperExecutable"
 }

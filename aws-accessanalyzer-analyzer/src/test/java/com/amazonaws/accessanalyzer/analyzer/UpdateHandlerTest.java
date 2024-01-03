@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import software.amazon.awssdk.awscore.AwsRequest;
+import software.amazon.awssdk.core.exception.SdkServiceException;
+import software.amazon.awssdk.services.accessanalyzer.model.AccessDeniedException;
 import software.amazon.awssdk.services.accessanalyzer.model.CreateArchiveRuleRequest;
 import software.amazon.awssdk.services.accessanalyzer.model.CreateArchiveRuleResponse;
 import software.amazon.awssdk.services.accessanalyzer.model.DeleteArchiveRuleRequest;
@@ -179,6 +181,23 @@ class UpdateHandlerTest {
   }
 
   @Test
+  void testAccessDeniedException() {
+    doThrow(AccessDeniedException.builder().message("access denied").build())
+        .when(proxy)
+        .injectCredentialsAndInvokeV2(any(), any());
+    val request = ResourceHandlerRequest.<ResourceModel>builder()
+        .desiredResourceState(anOldModel)
+        .previousResourceState(aNewModel)
+        .build();
+    val response = invokeHandleRequest(request);
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+    assertThat(response.getResourceModel()).isNull();
+    assertThat(response.getMessage()).startsWith("access denied");
+    assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.AccessDenied);
+  }
+
+  @Test
   void testLimitExceededServiceException() {
     doThrow(ServiceQuotaExceededException.builder().message("too many analyzers for account").build())
         .when(proxy)
@@ -210,6 +229,75 @@ class UpdateHandlerTest {
     assertThat(response.getResourceModel()).isNull();
     assertThat(response.getMessage()).startsWith("internal failure");
     assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
+  }
+
+  @Test
+  void testAmazonSericeException() {
+    AmazonServiceException amazonServiceException = new AmazonServiceException("Unknow Exception");
+    amazonServiceException.setStatusCode(400);
+    doThrow(amazonServiceException)
+        .when(proxy)
+        .injectCredentialsAndInvokeV2(any(), any());
+    val request = ResourceHandlerRequest.<ResourceModel>builder()
+        .desiredResourceState(anOldModel)
+        .previousResourceState(aNewModel)
+        .build();
+    val response = invokeHandleRequest(request);
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+    assertThat(response.getResourceModel()).isNull();
+    assertThat(response.getMessage()).startsWith("Unknow Exception");
+    assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.InvalidRequest);
+  }
+
+  @Test
+  void testUntagResourceNotFoundExceptionException() {
+    doThrow(SdkServiceException.builder().message("Resource Not Found, Status Code: 404").build())
+        .when(proxy)
+        .injectCredentialsAndInvokeV2(any(), any());
+    val request = ResourceHandlerRequest.<ResourceModel>builder()
+        .desiredResourceState(anOldModel)
+        .previousResourceState(aNewModel)
+        .build();
+    val response = invokeHandleRequest(request);
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+    assertThat(response.getMessage()).contains("not found");
+    assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotFound);
+  }
+
+  @Test
+  void testUnknownException() {
+    doThrow(SdkServiceException.builder().message("Unknown Exception").build())
+        .when(proxy)
+        .injectCredentialsAndInvokeV2(any(), any());
+    val request = ResourceHandlerRequest.<ResourceModel>builder()
+        .desiredResourceState(anOldModel)
+        .previousResourceState(aNewModel)
+        .build();
+    val response = invokeHandleRequest(request);
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+    assertThat(response.getMessage()).startsWith("Unknown Exception");
+    assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
+  }
+
+  @Test
+  void testPreviousStateNotFound() {
+    // empty previous model
+    val oldModel = ResourceModel.builder()
+        .build();
+    val request = ResourceHandlerRequest.<ResourceModel>builder()
+        .desiredResourceState(aNewModel)
+        .previousResourceState(oldModel)
+        .build();
+    val response = invokeHandleRequest(request);
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+    assertThat(response.getResourceModel()).isNotNull();
+    assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotFound);
+    assertThat(response.getMessage()).startsWith("Internal error");
+
   }
 
   private static ResourceModel anOldModel = ResourceModel.builder()
